@@ -1,4 +1,4 @@
-package com.tornadoentertainment.nfc_dsxml
+package com.moneyforward.nfc_dsxml
 
 import android.content.Context
 import android.util.Log
@@ -154,18 +154,28 @@ class XmlUtils {
                 element.addNamespaceDeclaration("kyo", "http://xml.e-tax.nta.go.jp/XSD/kyotsu")
                 element.addNamespaceDeclaration("xsi", "http://www.w3.org/2001/XMLSchema-instance")
                 element.toXML()
-             //   var doc2 = Builder().build("")
-               // doc2.rootElement = element
+                //   var doc2 = Builder().build("")
+                // doc2.rootElement = element
                 var root = doc1.rootElement.childElements[0].toXML()
                 root
                 val sha1 = MessageDigest.getInstance("SHA1")
+                val test2 =
+                    "<PTE0010 xmlns=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:gen=\"http://xml.e-tax.nta.go.jp/XSD/general\" xmlns:kyo=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><CATALOG id=\"CATALOG\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:description id=\"REPORT\"><SEND_DATA /><IT_SEC><rdf:description about=\"#IT\" /></IT_SEC><FORM_SEC><rdf:Seq /></FORM_SEC><TENPU_SEC /><XBRL_SEC /><SOFUSHO_SEC /></rdf:description></rdf:RDF></CATALOG><CONTENTS id=\"CONTENTS\"><IT VR=\"1.2\" id=\"IT\"><ZEIMUSHO ID=\"ZEIMUSHO\"><gen:zeimusho_CD>09401</gen:zeimusho_CD><gen:zeimusho_NM>高知</gen:zeimusho_NM></ZEIMUSHO><NOZEISHA_ID ID=\"NOZEISHA_ID\">1503042913920076</NOZEISHA_ID><NOZEISHA_NM ID=\"NOZEISHA_NM\">国税太郎</NOZEISHA_NM><NOZEISHA_ADR ID=\"NOZEISHA_ADR\">高知県高知市神田２０００</NOZEISHA_ADR><TETSUZUKI ID=\"TETSUZUKI\"><procedure_CD>PTE0010</procedure_CD><procedure_NM>電子証明書の登録</procedure_NM></TETSUZUKI></IT></CONTENTS></PTE0010>"
                 val test =
                     "<PTE0010 xmlns=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:gen=\"http://xml.e-tax.nta.go.jp/XSD/general\" xmlns:kyo=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" VR=\"1.0\" id=\"PTE0010\"><CATALOG id=\"CATALOG\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:description id=\"REPORT\"><SEND_DATA/><IT_SEC><rdf:description about=\"#IT\"/></IT_SEC><FORM_SEC><rdf:Seq/></FORM_SEC><TENPU_SEC/><XBRL_SEC/><SOFUSHO_SEC/></rdf:description></rdf:RDF></CATALOG><CONTENTS id=\"CONTENTS\"><IT VR=\"1.2\" id=\"IT\"><ZEIMUSHO ID=\"ZEIMUSHO\"><gen:zeimusho_CD>09401</gen:zeimusho_CD><gen:zeimusho_NM>高知</gen:zeimusho_NM></ZEIMUSHO><NOZEISHA_ID ID=\"NOZEISHA_ID\">1503042913920076</NOZEISHA_ID><NOZEISHA_NM ID=\"NOZEISHA_NM\">国税太郎</NOZEISHA_NM><NOZEISHA_ADR ID=\"NOZEISHA_ADR\">高知県高知市神田２０００</NOZEISHA_ADR><TETSUZUKI ID=\"TETSUZUKI\"><procedure_CD>PTE0010</procedure_CD><procedure_NM>電子証明書の登録</procedure_NM></TETSUZUKI></IT></CONTENTS></PTE0010>"
                 sha1.reset()
                 SHA1(test)
                 toHex(test)
-                Utils.toHex(SHA1(toHex(element.toXML())))
-                return SHA1(canonicali(test.toByteArray()))
+                Utils.toHex(
+                    SHA1(
+                        toHex(element.toXML())
+                    )
+                )
+                return SHA1(
+                    canonicali(
+                        test.toByteArray()
+                    )
+                )
             } catch (e: Exception) {
                 Log.e("error", e.message)
             }
@@ -186,7 +196,7 @@ class XmlUtils {
                 sha1.reset()
                 sha1.update(java.nio.ByteBuffer.wrap(canonicalOs.toByteArray()))
                 val salidasha1 = sha1.digest()
-                val tagDigestValue = String(Base64.encode(salidasha1, Base64.DEFAULT))
+                val tagDigestValue = String(Base64.encode(salidasha1, Base64.NO_WRAP))
                 return tagDigestValue
             } catch (e: Exception) {
                 Log.e("error", e.message)
@@ -201,6 +211,42 @@ class XmlUtils {
             serializer.write(doc)
             return out.toString("UTF-8")
         }
+
+        fun getRawXMLToSignature(xmlData: String): String {
+            val builder = Builder()
+
+            val inputStream = ByteArrayInputStream(xmlData.toByteArray(Charsets.UTF_8))
+
+            var doc = builder.build(inputStream)
+            var child = doc.rootElement
+
+            var newDoc = Element(child.childElements[0].localName, child.namespaceURI)
+            for (i in 0 until child.namespaceDeclarationCount) {
+                if (child.getNamespacePrefix(i).isNotEmpty()) {
+                    newDoc.addNamespaceDeclaration(
+                        child.getNamespacePrefix(i),
+                        child.getNamespaceURI(child.getNamespacePrefix(i))
+                    )
+                }
+            }
+
+            for (i in 0 until child.childElements[0].attributeCount) {
+                newDoc.addAttribute(
+                    Attribute(
+                        child.childElements[0].getAttribute(i).localName,
+                        child.childElements[0].getAttribute(i).value
+                    )
+                )
+            }
+
+            for (i in 0 until child.childElements[0].childCount) {
+                val subChild = child.childElements[0].getChild(i).copy()
+                newDoc.appendChild(subChild)
+            }
+
+            return newDoc.toXML()
+        }
+
 
         fun getXMLSignature(dataXml: InputStream, element: Element): String {
             // val stream = ByteArrayInputStream(dataXml)

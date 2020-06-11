@@ -1,4 +1,4 @@
-package com.tornadoentertainment.nfc_dsxml
+package com.moneyforward.nfc_dsxml
 
 /**
  * Created by Kan on 2020-06-01

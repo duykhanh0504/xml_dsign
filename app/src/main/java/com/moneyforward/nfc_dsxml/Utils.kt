@@ -1,4 +1,4 @@
-package com.tornadoentertainment.nfc_dsxml
+package com.moneyforward.nfc_dsxml
 
 import android.content.Context
 import java.io.File

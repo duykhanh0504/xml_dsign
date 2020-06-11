@@ -1,4 +1,4 @@
-package com.tornadoentertainment.nfc_dsxml
+package com.moneyforward.nfc_dsxml
 
 import android.nfc.tech.IsoDep
 import java.io.ByteArrayInputStream
@@ -141,7 +141,11 @@ class NfcUtils {
 
                 val response = isodep.transceive(commandToRead)
 
-                readLength = Utils.bytesToUnsignedShort(response[2], response[3], true)
+                readLength = Utils.bytesToUnsignedShort(
+                    response[2],
+                    response[3],
+                    true
+                )
                 val blockNum = ceil(readLength / DF1EF1length.toDouble()).toInt()
                 var cmd = commandToReadBlock
                 for (index in 0..blockNum) {

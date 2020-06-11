@@ -1,47 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <RelativeLayout
+        android:id="@+id/inputGroup"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MainActivity">
-
-        <EditText
-            android:id="@+id/inputPin"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="input Pin" />
+        tools:context="com.moneyforward.nfc_dsxml.MainActivity">
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:lines="10"
-            android:text="text"
+            android:text="Please Input Pin Code"
+            android:layout_marginTop="56dp"
+            android:layout_marginStart="16dp"
             android:textColor="@color/colorPrimary"
-            android:textSize="14pt" />
+            android:textSize="18sp" />
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/inputPin"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/title"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginStart="24dp"
+            android:inputType="number"
+            android:background="@drawable/edit_background"
+            android:hint="input Pin" />
+
 
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_centerInParent="true"
-            android:layout_below="@+id/textView"
-            android:textColor="@color/colorPrimary" />
+            android:textColor="@color/colorPrimary"
+            android:visibility="gone"/>
 
         <Button
             android:id="@+id/btnSendCommand"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/webView"
+            android:layout_below="@+id/inputPin"
             android:layout_centerHorizontal="true"
             android:gravity="center"
-            android:text="send command" />
+            android:textAllCaps="false"
+            android:paddingEnd="12dp"
+            android:paddingStart="12dp"
+            android:background="@drawable/edit_background"
+            android:text="Start Reader" />
+
+        <TextView
+            android:id="@+id/tvContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/btnSendCommand"
+            android:textColor="@color/colorPrimary"
+            android:textSize="14sp" />
 
     </RelativeLayout>
 </androidx.core.widget.NestedScrollView>
