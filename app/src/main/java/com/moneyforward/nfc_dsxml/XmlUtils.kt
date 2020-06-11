@@ -212,6 +212,18 @@ class XmlUtils {
             return out.toString("UTF-8")
         }
 
+        fun getIdRoot(xmlData: String): String {
+            val builder = Builder()
+
+            val inputStream = ByteArrayInputStream(xmlData.toByteArray(Charsets.UTF_8))
+
+            var doc = builder.build(inputStream)
+            var child = doc.rootElement
+
+            return child.childElements[0].localName
+        }
+
+
         fun getRawXMLToSignature(xmlData: String): String {
             val builder = Builder()
 

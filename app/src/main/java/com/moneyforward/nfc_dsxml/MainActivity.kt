@@ -5,19 +5,14 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
-import android.nfc.NdefMessage
-import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
 import java.lang.Exception
 import java.math.BigInteger
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.experimental.and
 import android.nfc.tech.NfcF
 import android.os.Environment
@@ -34,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     var dialog: BottomSheetDialog? = null
     var xmlRawData = ""
     var digistValue = ""
+    var IdRoot = ""
 
     // list of NFC technologies detected:
     private val techList = arrayOf(
@@ -65,14 +61,15 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun requestPermission(){
+    private fun requestPermission() {
         ActivityCompat.requestPermissions(this, list.toTypedArray(), 23)
     }
 
     private fun XmlReader() {
 
-        xmlRawData = XmlUtils.getXml(this,"xml/example1.xtx") ?: ""
+        xmlRawData = XmlUtils.getXml(this, "xml/example1.xtx") ?: ""
         val xmlString = XmlUtils.getRawXMLToSignature(xmlRawData)
+        IdRoot = XmlUtils.getIdRoot(xmlRawData)
         xmlString?.toByteArray()?.let {
             val test = XmlUtils.canonicalizerXml(it)
             digistValue = XmlUtils.createDigistInfoBase64(test)
