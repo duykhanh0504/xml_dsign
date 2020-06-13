@@ -2,6 +2,7 @@ package com.moneyforward.nfc_dsxml
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     var xmlRawData = ""
     var digistValue = ""
     var IdRoot = ""
+    var certificate = ""
 
     // list of NFC technologies detected:
     private val techList = arrayOf(
@@ -93,8 +95,6 @@ class MainActivity : AppCompatActivity() {
             "example_sign.xml",
             xml
         )
-
-
         var digistInfo: ByteArray = byteArrayOf()
         var digestValue = ""
 
@@ -103,53 +103,153 @@ class MainActivity : AppCompatActivity() {
     private fun readNFCTag(nfcTag: Tag?) {
         nfcTag?.also {
             try {
-
-                // val nfcf = NfcF.get(it)
-                //nfcf.connect()
-
                 val isoDep = IsoDep.get(it)
                 isoDep.connect()
 
-                val response1 = isoDep.transceive(
+                val readFileGetCertificate = isoDep.transceive(
                     NfcUtils.commandSelectFile
                 )
-                if (response1 != byteArrayOf(0x90.toByte(), 0x00)) {
-
+                if (readFileGetCertificate != NFCStatus.SUCCESS.value) {
+                    if (readFileGetCertificate == NFCStatus.FILE_NOT_FOUND.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 1 : file not found ${String(
+                                readFileGetCertificate,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    else if (readFileGetCertificate == NFCStatus.NOT_ALLOW.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 1: not allow command ${String(readFileGetCertificate,Charsets.UTF_8)}"
+                        )
+                    else{
+                        showAlertWithPositive(
+                            "error",
+                            "step 1: error code ${String(readFileGetCertificate,Charsets.UTF_8)}"
+                        )
+                    }
+                    isoDep.close()
+                    return@also
                 }
-                tvContent.text = "Card Response 1: " + Utils.toHex(
-                    response1
-                )
 
-                val response4 = isoDep.transceive(
+                val selectCertificate = isoDep.transceive(
                     NfcUtils.commandSelectCertificate
                 )
-                tvContent.text = "Card Response 1: " + Utils.toHex(
-                    response4
+
+                if (selectCertificate != NFCStatus.SUCCESS.value) {
+                    if (selectCertificate == NFCStatus.FILE_NOT_FOUND.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 2 : file not found ${String(
+                                selectCertificate,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    else if (selectCertificate == NFCStatus.NOT_ALLOW.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 2: not allow command ${String(selectCertificate,Charsets.UTF_8)}"
+                        )
+                    else{
+                        showAlertWithPositive(
+                            "error",
+                            "step 2: error code ${String(selectCertificate,Charsets.UTF_8)}"
+                        )
+                    }
+                    isoDep.close()
+                    return@also
+                }
+
+                val readCertificate = NfcUtils.ReadData(isoDep)
+
+                if(readCertificate.size <= 2){
+                    showAlertWithPositive(
+                        "error",
+                        "step 3: can not read certificate ${String(readCertificate,Charsets.UTF_8)}"
+                    )
+                    isoDep.close()
+                    return@also
+                } else {
+                    certificate= String(readCertificate,Charsets.UTF_8)
+                }
+
+                val readFileToGetSign = isoDep.transceive(
+                    NfcUtils.commandSelectFile
                 )
 
-                val response5 = NfcUtils.ReadData(isoDep)
+                if (!readFileToGetSign.contentEquals(NFCStatus.SUCCESS.value)) {
+                    if (readFileToGetSign.contentEquals(NFCStatus.FILE_NOT_FOUND.value))
+                        showAlertWithPositive(
+                            "error",
+                            "step 2 -1 : file not found ${String(
+                                readFileToGetSign,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    else if (readFileGetCertificate.contentEquals(NFCStatus.NOT_ALLOW.value))
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-1: not allow command ${String(readFileToGetSign,Charsets.UTF_8)}"
+                        )
+                    else{
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-1: error code ${String(readFileToGetSign,Charsets.UTF_8)}"
+                        )
+                    }
+                    isoDep.close()
+                    return@also
+                }
 
-                tvContent.text = "Card Response 1: " + Utils.toHex(
-                    response5
-                )
-
-
-                val response2 = isoDep.transceive(
+                val selectFilePin = isoDep.transceive(
                     NfcUtils.commandSelectFilePin
                 )
-                tvContent.text = "Card Response 2: " + Utils.toHex(
-                    response2
-                )
+                if (selectFilePin != NFCStatus.SUCCESS.value) {
+                    if (selectFilePin == NFCStatus.FILE_NOT_FOUND.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 2 -2 : file not found ${String(
+                                selectFilePin,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    else if (selectFilePin == NFCStatus.NOT_ALLOW.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-2: not allow command ${String(selectFilePin,Charsets.UTF_8)}"
+                        )
+                    else{
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-2: error code ${String(selectFilePin,Charsets.UTF_8)}"
+                        )
+                    }
+                    isoDep.close()
+                    return@also
+                }
 
                 val commandVerifyPin =
                     NfcUtils.commandSignaturePin(inputPin.text.toString().toByteArray())
-
-                val response3 = isoDep.transceive(
+                val verifyPin = isoDep.transceive(
                     commandVerifyPin
                 )
-                tvContent.text = "Card Response 3: " + Utils.toHex(
-                    response3
-                )
+                if (verifyPin != NFCStatus.SUCCESS.value) {
+                    if (verifyPin == NFCStatus.PIN_LOCK.value) {
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-3: pin lock  ${String(verifyPin, Charsets.UTF_8)}"
+                        )
+                    }
+                    else {
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-3: pin lock  ${String(verifyPin, Charsets.UTF_8)}"
+                        )
+                    }
+                    isoDep.close()
+                    return@also
+                }
 
                 var digistInfo: ByteArray = byteArrayOf()
                 var digestValue = ""

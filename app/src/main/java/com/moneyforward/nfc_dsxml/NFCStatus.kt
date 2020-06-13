@@ -5,7 +5,11 @@ package com.moneyforward.nfc_dsxml
  * Copyright © 2018 Money Forward, Inc. All rights
  */
 
-enum class errorStatus {
+enum class NFCStatus(var value: ByteArray) {
+    SUCCESS(byteArrayOf(0x90.toByte(), 0x00)),
+    FILE_NOT_FOUND(byteArrayOf(0x6A.toByte(), 0x82.toByte())),
+    NOT_ALLOW(byteArrayOf(0x69.toByte(), 0x86.toByte())),
+    PIN_LOCK(byteArrayOf(0x63.toByte(), 0xC3.toByte()))
     /*SW001("9000", "Successful"),
     SW002("6200","No information given"),
     SW003("6281","Part of returned data may be corrupted"),

@@ -18,7 +18,7 @@ class NfcUtils {
 
     companion object {
 
-        private val DF1EF1length = 256
+        private val BLOCK_LENGTH = 256
 
         val commandSelectFile = byteArrayOf(
             0x00,
@@ -46,58 +46,6 @@ class NfcUtils {
         val commandToRead = byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x04)
 
         val commandToReadBlock = byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x00)
-
-        val commnadVREF1 = byteArrayOf(0x00, 0x20, 0x00, 0x81.toByte())
-
-        val commnadREAD01 = byteArrayOf(0x00, 0xB0.toByte(), 0x00, 0x00, 0x40)
-
-        val commnadDF02 = byteArrayOf(
-            0x00,
-            0xA4.toByte(),
-            0x04,
-            0x0C,
-            0x10,
-            0xA0.toByte(),
-            0x00,
-            0x00,
-            0x02,
-            0x31,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00
-        )
-
-        val commnadDF01 = byteArrayOf(
-            0x00,
-            0xA4.toByte(),
-            0x04,
-            0x0C,
-            0x10,
-            0xA0.toByte(),
-            0x00,
-            0x00,
-            0x02,
-            0x31,
-            0x01,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00
-        )
 
         var commandSelectFilePin = byteArrayOf(0x00, 0xA4.toByte(), 0x02, 0x0C, 0x02, 0x00, 0x18)
 
@@ -140,13 +88,14 @@ class NfcUtils {
             try {
 
                 val response = isodep.transceive(commandToRead)
-
+                if(response.size <=2)
+                    return response
                 readLength = Utils.bytesToUnsignedShort(
                     response[2],
                     response[3],
                     true
                 )
-                val blockNum = ceil(readLength / DF1EF1length.toDouble()).toInt()
+                val blockNum = ceil(readLength / BLOCK_LENGTH.toDouble()).toInt()
                 var cmd = commandToReadBlock
                 for (index in 0..blockNum) {
                     cmd[2] = index.toByte()

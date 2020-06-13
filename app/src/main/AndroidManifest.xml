@@ -10,8 +10,6 @@
     <uses-feature
         android:name="android.hardware.nfc"
         android:required="true" />
-
-
     <application
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
