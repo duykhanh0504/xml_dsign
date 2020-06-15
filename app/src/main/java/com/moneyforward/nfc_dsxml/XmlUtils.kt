@@ -318,14 +318,14 @@ class XmlUtils {
                 var dignedInfo = Element(SIGNED_INFO, "http://www.w3.org/2000/09/xmldsig#")
                 var canonicalMedthod =
                     Element(CANONICAL_MEDTHOD, "http://www.w3.org/2000/09/xmldsig#")
-                val attAlgorthm = Attribute(ALGORITHM, "http://www.w3.org/2010/xml-c14n2")
+                val attAlgorthm = Attribute(ALGORITHM, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315")
                 canonicalMedthod.addAttribute(attAlgorthm)
                 val signatureMethod =
                     Element(SIGNATUREMEDTHOD, "http://www.w3.org/2000/09/xmldsig#")
                 signatureMethod.addAttribute(
                     Attribute(
                         ALGORITHM,
-                        "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+                        "http://www.w3.org/2001/04/xmldsig-more#rsa-sha1"
                     )
                 )
                 dignedInfo.insertChild(canonicalMedthod, 0)
@@ -350,7 +350,7 @@ class XmlUtils {
                 digestMedthod.addAttribute(
                     Attribute(
                         ALGORITHM,
-                        "http://www.w3.org/2001/04/xmlenc#sha256"
+                        "http://www.w3.org/2001/04/xmlenc#sha1"
                     )
                 )
 
