@@ -18,7 +18,6 @@ import java.math.BigInteger
 import kotlin.experimental.and
 import android.nfc.tech.NfcF
 import android.os.Build
-import android.os.Environment
 import android.util.Base64
 import android.view.View
 import androidx.core.app.ActivityCompat
@@ -37,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     var digistValue = ""
     var IdRoot = ""
     var certificate = ""
+    var digitalSinatureValue = ""
 
     private var animation: AnimatedVectorDrawable = AnimatedVectorDrawable()
 
@@ -74,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, list.toTypedArray(), 23)
     }
 
+
     private fun XmlReader() {
 
         xmlRawData = XmlUtils.getXml(this, "xml/example1.xtx") ?: ""
@@ -84,30 +85,10 @@ class MainActivity : AppCompatActivity() {
             digistValue = XmlUtils.createDigistInfoBase64(shaDigisInfo)
         }
 
-
-        var xml = ""
-        XmlUtils.getXmltoByteArray(this, "xml/example1.xtx")?.let {
-            xml = XmlUtils.getXMLSignature(
-                it,
-                XmlUtils.createXmlSignature("", "", "")
-            )
-        }
-
-        webView.loadData(xml, "text/html", null)
-
-        val s = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-
-        Utils.writeFileOnInternalStorage(
-            s,
-            "example_sign.xml",
-            xml
-        )
-        var digistInfo: ByteArray = byteArrayOf()
-        var digestValue = ""
-
     }
 
-    private fun readNFCTag(nfcTag: Tag?) {
+    private fun readNFCTag(nfcTag: Tag?): String {
+        var result = ""
         nfcTag?.also {
             try {
                 val isoDep = IsoDep.get(it)
@@ -184,7 +165,12 @@ class MainActivity : AppCompatActivity() {
                     isoDep.close()
                     return@also
                 } else {
-                    certificate = String(readCertificate, Charsets.UTF_8)
+                    certificate = String(
+                        Base64.encode(
+                            readCertificate,
+                            Base64.NO_WRAP
+                        )
+                    ) //String(readCertificate, Charsets.UTF_8)
                 }
 
                 val readFileToGetSign = isoDep.transceive(
@@ -300,24 +286,59 @@ class MainActivity : AppCompatActivity() {
                 }
 
 
+                val digistInfo = NfcUtils.asn1DigestInfo(shaDigisInfo)
+
                 val computerSignature =
                     NfcUtils.commandSignatureData(
-                        shaDigisInfo
+                        digistInfo
                     )
 
-                val response = isoDep.transceive(computerSignature)
+                val singatureData = isoDep.transceive(computerSignature)
 
-                tvContent.text = "Card Response: " + Utils.toHex(
-                    response
-                )
+                if (singatureData.size < 2) {
+                    showAlertWithPositive(
+                        "error",
+                        "step 2 -5 : unknow error"
+                    )
+                    isoDep.close()
+                    return@also
+                } else {
+                    val status = byteArrayOf(
+                        singatureData[singatureData.size - 2],
+                        singatureData[singatureData.size - 1]
+                    )
+                    if (status != NFCStatus.SUCCESS.value) {
+                        showAlertWithPositive(
+                            "error",
+                            "step 2 -5 : unknow error ${String(
+                                status,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                        isoDep.close()
+                        return@also
 
+                    } else {
+                        val dataSignature = singatureData.copyOfRange(0, singatureData.size - 2)
+                        digitalSinatureValue = String(Base64.encode(dataSignature, Base64.NO_WRAP))
+                    }
+                }
                 isoDep.close()
+                val signature = XmlUtils.createXmlSignature(
+                    signInfo = digistValue, signValue = digitalSinatureValue,
+                    certificate = certificate, tagIdURI = IdRoot
+                )
+                result = XmlUtils.signatureXML(xmlRawData, signature)
 
-                //  isoDep.close()
             } catch (e: Exception) {
-                Log.d("error", e.message)
+                e.message?.let { it1 ->
+                    showAlertWithPositive(
+                        "error", it1
+                    )
+                }
             }
         }
+        return result
     }
 
     private fun startNFC() {
@@ -416,6 +437,42 @@ class MainActivity : AppCompatActivity() {
 
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             readNFCTag(tag)
+
+            // test
+             xmlRawData = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
+                     "<DATA xmlns=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:gen=\"http://xml.e-tax.nta.go.jp/XSD/general\" xmlns:kyo=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" id=\"DATA\"><PTE0010 VR=\"1.0\" id=\"PTE0010\"><CATALOG id=\"CATALOG\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:description id=\"REPORT\"><SEND_DATA/><IT_SEC><rdf:description about=\"#IT\"/></IT_SEC><FORM_SEC><rdf:Seq/></FORM_SEC><TENPU_SEC/><XBRL_SEC/><SOFUSHO_SEC/></rdf:description></rdf:RDF></CATALOG><CONTENTS id=\"CONTENTS\"><IT VR=\"1.2\" id=\"IT\"><ZEIMUSHO ID=\"ZEIMUSHO\"><gen:zeimusho_CD>09401</gen:zeimusho_CD><gen:zeimusho_NM>高知</gen:zeimusho_NM></ZEIMUSHO><NOZEISHA_ID ID=\"NOZEISHA_ID\">1503042913920076</NOZEISHA_ID><NOZEISHA_NM ID=\"NOZEISHA_NM\">国税太郎</NOZEISHA_NM><NOZEISHA_ADR ID=\"NOZEISHA_ADR\">高知県高知市神田２０００</NOZEISHA_ADR><TETSUZUKI ID=\"TETSUZUKI\"><procedure_CD>PTE0010</procedure_CD><procedure_NM>電子証明書の登録</procedure_NM></TETSUZUKI></IT></CONTENTS></PTE0010></DATA>\n"
+             xmlRawDigisInfo = "<PTE0010 xmlns=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:gen=\"http://xml.e-tax.nta.go.jp/XSD/general\" xmlns:kyo=\"http://xml.e-tax.nta.go.jp/XSD/kyotsu\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" VR=\"1.0\" id=\"PTE0010\"><CATALOG id=\"CATALOG\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><rdf:description id=\"REPORT\"><SEND_DATA /><IT_SEC><rdf:description about=\"#IT\" /></IT_SEC><FORM_SEC><rdf:Seq /></FORM_SEC><TENPU_SEC /><XBRL_SEC /><SOFUSHO_SEC /></rdf:description></rdf:RDF></CATALOG><CONTENTS id=\"CONTENTS\"><IT VR=\"1.2\" id=\"IT\"><ZEIMUSHO ID=\"ZEIMUSHO\"><gen:zeimusho_CD>09401</gen:zeimusho_CD><gen:zeimusho_NM>高知</gen:zeimusho_NM></ZEIMUSHO><NOZEISHA_ID ID=\"NOZEISHA_ID\">1503042913920076</NOZEISHA_ID><NOZEISHA_NM ID=\"NOZEISHA_NM\">国税太郎</NOZEISHA_NM><NOZEISHA_ADR ID=\"NOZEISHA_ADR\">高知県高知市神田２０００</NOZEISHA_ADR><TETSUZUKI ID=\"TETSUZUKI\"><procedure_CD>PTE0010</procedure_CD><procedure_NM>電子証明書の登録</procedure_NM></TETSUZUKI></IT></CONTENTS></PTE0010>"
+             digistValue = "EG5aEmJMEjWOaN7xHpKkE31VZEA="
+             IdRoot = "PTE0010"
+             certificate = "MIIDHTCCAgWgAwIBAgICBCswDQYJKoZIhvcNAQEFBQAwZTELMAkGA1UEBhMCSlAx\n" +
+                     "HDAaBgNVBAoTE0phcGFuZXNlIEdvdmVybm1lbnQxHDAaBgNVBAsTE05hdGlvbmFs\n" +
+                     "IFRheCBBZ2VuY3kxGjAYBgNVBAMTEVRFU1QgQ0EgZm9yIGUtVGF4MB4XDTEzMDMy\n" +
+                     "MTEzMDMwNVoXDTI5MTIyOTAwMDAwMFowYzELMAkGA1UEBhMCSlAxHDAaBgNVBAoM\n" +
+                     "E0phcGFuZXNlIEdvdmVybm1lbnQxHDAaBgNVBAsME05hdGlvbmFsIFRheCBBZ2Vu\n" +
+                     "Y3kxGDAWBgNVBAMMD2NsaWNlcnQwMDAwMTA2NzCBnzANBgkqhkiG9w0BAQEFAAOB\n" +
+                     "jQAwgYkCgYEAshUZlOMOBylulSIz7PIhcJ5ysl8+mS46nxyS/Y9jnkXzt0m4WSVF\n" +
+                     "UsiJxNN8pMgHB2W20LNhAJV7Yg/+xmFQTHJzPDMvFOhlu2kmpqFwvcJfN5eof/00\n" +
+                     "30a81Fe+l+8Vgqe5NjLAGZXPGBRCYpSsJVc1ub1G8Gnewddi7iaWH/8CAwEAAaNd\n" +
+                     "MFswDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBPAwHwYDVR0jBBgwFoAUQa/Xix2y\n" +
+                     "a/drtwpfq3WBmidyPZEwHQYDVR0OBBYEFHyBYRMq7i4ySXaAm5Qoh7uNLD1UMA0G\n" +
+                     "CSqGSIb3DQEBBQUAA4IBAQAG+wtIGVeg1KJH5PuKzQQRf9hWKhTw2d4jIUI/Mhok\n" +
+                     "2gD7djn2iOZSS/qh3E8tJ4rgFUMehsYu3jLrWTL+HyuxPleO7F7yF8ubUPe62qLH\n" +
+                     "kHt+sVUaMP3+Tt1VTO7dWJn6fp+fbBm4I8yi1G/VNokqtC1lezyH3fJMa42vCOI1\n" +
+                     "hpU/xSq4Bg3zQYgJ8E/KK+X/0vpIYE80/E2jw5u3kUueViUz4EHXRcX6kdCzCR8T\n" +
+                     "rOGpvykNjEKBN+A/6OSBMPIrLj1OL4+38VkmhEcl6xS+oZDIyeeHAkgPvbAoNFhO\n" +
+                     "CKfpwGl/fg9ZCqjRbtJEs28GirzbvJzkgt10/TwT7dE/"
+             digitalSinatureValue = "cuFFxOdV8uoPNQ7PdTyslkd4+uSCoU0kZUil+/S//xvwrZDa0WJXFBKH9cnPhryj\n" +
+                     "HkzqrwjK+0y4alvKSpAiksOo2pgSEh+iBAR+fdIIicTOw3u0tealVf8WFHMCcaMn\n" +
+                     "bPNprjCqsjYLUkEZkygdPwVEChRyp/Z6tbYEZCar4cA="
+
+            val signature = XmlUtils.createXmlSignature(
+                signInfo = digistValue, signValue = digitalSinatureValue,
+                certificate = certificate, tagIdURI = IdRoot
+            )
+            val result = XmlUtils.signatureXML(xmlRawData, XmlUtils.createXmlSignature(
+                signInfo = digistValue, signValue = digitalSinatureValue,
+                certificate = certificate, tagIdURI = IdRoot
+            ))
         }
     }
 

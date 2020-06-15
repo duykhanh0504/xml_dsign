@@ -7,11 +7,9 @@ import nu.xom.canonical.Canonicalizer.CANONICAL_XML
 import java.io.*
 import android.util.Base64
 import nu.xom.*
-import nu.xom.canonical.Canonicalizer.EXCLUSIVE_XML_CANONICALIZATION
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
-import kotlin.experimental.and
 
 /**
  * Created by Kan on 2020-05-31
@@ -224,12 +222,29 @@ class XmlUtils {
         }
 
 
+        fun toXML(doc: Document): String {
+
+            val result = StringBuffer(64)
+
+            result.append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n")
+
+            // children
+            for (i in 0 until doc.childCount) {
+                result.append(doc.getChild(i).toXML())
+                result.append("\n")
+            }
+
+            return result.toString()
+
+        }
+
         fun getRawXMLToSignature(xmlData: String): String {
             val builder = Builder()
 
             val inputStream = ByteArrayInputStream(xmlData.toByteArray(Charsets.UTF_8))
 
             var doc = builder.build(inputStream)
+
             var child = doc.rootElement
 
             var newDoc = Element(child.childElements[0].localName, child.namespaceURI)
@@ -260,19 +275,44 @@ class XmlUtils {
         }
 
 
+        fun signatureXML(dataXml: String, element: Element): String {
+            val builder = Builder()
+            val inputStream = ByteArrayInputStream(dataXml.toByteArray(Charsets.UTF_8))
+
+            var doc = builder.build(inputStream)
+            try {
+                val serializer = Serializer(System.out, "UTF-8")
+                serializer.indent = 4
+                serializer.maxLength = 64
+                serializer.write(doc)
+            } catch (ex: IOException) {
+                System.err.println(ex)
+            }
+
+            var root = doc.rootElement
+            root.insertChild(element, 1)
+
+            return toXML(doc)
+
+        }
+
         fun getXMLSignature(dataXml: InputStream, element: Element): String {
-            // val stream = ByteArrayInputStream(dataXml)
             val builder = Builder()
 
             var doc = builder.build(dataXml)
             var root = doc.rootElement
-            root.insertChild(element, 0)
+            root.insertChild(element, 1)
 
             return prettyXml(doc)
 
         }
 
-        fun createXmlSignature(signInfo: String, signValue: String, certificate: String): Element {
+        fun createXmlSignature(
+            signInfo: String,
+            signValue: String,
+            certificate: String,
+            tagIdURI: String
+        ): Element {
             var signature = Element(SIGNATURE, "http://www.w3.org/2000/09/xmldsig#")
             try {
                 var dignedInfo = Element(SIGNED_INFO, "http://www.w3.org/2000/09/xmldsig#")
@@ -292,10 +332,17 @@ class XmlUtils {
                 dignedInfo.insertChild(signatureMethod, 1)
 
                 var reference = Element(REFERENCE, "http://www.w3.org/2000/09/xmldsig#")
-                reference.addAttribute(Attribute("URI", "#RKO0010"))
+                if (tagIdURI.isNotEmpty()) {
+                    reference.addAttribute(Attribute("URI", "#$tagIdURI"))
+                }
                 var transfroms = Element(TRANSFROMS, "http://www.w3.org/2000/09/xmldsig#")
                 var transfrom = Element(TRANSFROM, "http://www.w3.org/2000/09/xmldsig#")
-                transfrom.addAttribute(Attribute(ALGORITHM, "http://www.w3.org/2006/12/xml-c14n11"))
+                transfrom.addAttribute(
+                    Attribute(
+                        ALGORITHM,
+                        "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+                    )
+                )
                 transfroms.insertChild(transfrom, 0)
                 reference.insertChild(transfroms, 0)
 
