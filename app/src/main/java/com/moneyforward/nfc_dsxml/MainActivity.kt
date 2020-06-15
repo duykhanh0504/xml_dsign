@@ -2,10 +2,11 @@ package com.moneyforward.nfc_dsxml
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.drawable.AnimatedVectorDrawable
+import android.graphics.drawable.Drawable
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.*
@@ -16,6 +17,7 @@ import java.lang.Exception
 import java.math.BigInteger
 import kotlin.experimental.and
 import android.nfc.tech.NfcF
+import android.os.Build
 import android.os.Environment
 import android.util.Base64
 import android.view.View
@@ -24,14 +26,19 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.moneyforward.nfc_dsxml.common.showAlertWithPositive
 import com.moneyforward.nfc_dsxml.extension.hideKeyboard
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.modal_bottomsheet.view.*
 
 class MainActivity : AppCompatActivity() {
 
     var dialog: BottomSheetDialog? = null
     var xmlRawData = ""
+    var xmlRawDigisInfo = ""
+    var shaDigisInfo: ByteArray = byteArrayOf()
     var digistValue = ""
     var IdRoot = ""
     var certificate = ""
+
+    private var animation: AnimatedVectorDrawable = AnimatedVectorDrawable()
 
     // list of NFC technologies detected:
     private val techList = arrayOf(
@@ -70,11 +77,11 @@ class MainActivity : AppCompatActivity() {
     private fun XmlReader() {
 
         xmlRawData = XmlUtils.getXml(this, "xml/example1.xtx") ?: ""
-        val xmlString = XmlUtils.getRawXMLToSignature(xmlRawData)
+        xmlRawDigisInfo = XmlUtils.getRawXMLToSignature(xmlRawData)
         IdRoot = XmlUtils.getIdRoot(xmlRawData)
-        xmlString?.toByteArray()?.let {
-            val test = XmlUtils.canonicalizerXml(it)
-            digistValue = XmlUtils.createDigistInfoBase64(test)
+        xmlRawDigisInfo.toByteArray().let {
+            shaDigisInfo = XmlUtils.canonicalizerXml(it)
+            digistValue = XmlUtils.createDigistInfoBase64(shaDigisInfo)
         }
 
 
@@ -121,12 +128,15 @@ class MainActivity : AppCompatActivity() {
                     else if (readFileGetCertificate == NFCStatus.NOT_ALLOW.value)
                         showAlertWithPositive(
                             "error",
-                            "step 1: not allow command ${String(readFileGetCertificate,Charsets.UTF_8)}"
+                            "step 1: not allow command ${String(
+                                readFileGetCertificate,
+                                Charsets.UTF_8
+                            )}"
                         )
-                    else{
+                    else {
                         showAlertWithPositive(
                             "error",
-                            "step 1: error code ${String(readFileGetCertificate,Charsets.UTF_8)}"
+                            "step 1: error code ${String(readFileGetCertificate, Charsets.UTF_8)}"
                         )
                     }
                     isoDep.close()
@@ -149,12 +159,12 @@ class MainActivity : AppCompatActivity() {
                     else if (selectCertificate == NFCStatus.NOT_ALLOW.value)
                         showAlertWithPositive(
                             "error",
-                            "step 2: not allow command ${String(selectCertificate,Charsets.UTF_8)}"
+                            "step 2: not allow command ${String(selectCertificate, Charsets.UTF_8)}"
                         )
-                    else{
+                    else {
                         showAlertWithPositive(
                             "error",
-                            "step 2: error code ${String(selectCertificate,Charsets.UTF_8)}"
+                            "step 2: error code ${String(selectCertificate, Charsets.UTF_8)}"
                         )
                     }
                     isoDep.close()
@@ -163,15 +173,18 @@ class MainActivity : AppCompatActivity() {
 
                 val readCertificate = NfcUtils.ReadData(isoDep)
 
-                if(readCertificate.size <= 2){
+                if (readCertificate.size <= 2) {
                     showAlertWithPositive(
                         "error",
-                        "step 3: can not read certificate ${String(readCertificate,Charsets.UTF_8)}"
+                        "step 3: can not read certificate ${String(
+                            readCertificate,
+                            Charsets.UTF_8
+                        )}"
                     )
                     isoDep.close()
                     return@also
                 } else {
-                    certificate= String(readCertificate,Charsets.UTF_8)
+                    certificate = String(readCertificate, Charsets.UTF_8)
                 }
 
                 val readFileToGetSign = isoDep.transceive(
@@ -190,12 +203,15 @@ class MainActivity : AppCompatActivity() {
                     else if (readFileGetCertificate.contentEquals(NFCStatus.NOT_ALLOW.value))
                         showAlertWithPositive(
                             "error",
-                            "step 2-1: not allow command ${String(readFileToGetSign,Charsets.UTF_8)}"
+                            "step 2-1: not allow command ${String(
+                                readFileToGetSign,
+                                Charsets.UTF_8
+                            )}"
                         )
-                    else{
+                    else {
                         showAlertWithPositive(
                             "error",
-                            "step 2-1: error code ${String(readFileToGetSign,Charsets.UTF_8)}"
+                            "step 2-1: error code ${String(readFileToGetSign, Charsets.UTF_8)}"
                         )
                     }
                     isoDep.close()
@@ -217,12 +233,12 @@ class MainActivity : AppCompatActivity() {
                     else if (selectFilePin == NFCStatus.NOT_ALLOW.value)
                         showAlertWithPositive(
                             "error",
-                            "step 2-2: not allow command ${String(selectFilePin,Charsets.UTF_8)}"
+                            "step 2-2: not allow command ${String(selectFilePin, Charsets.UTF_8)}"
                         )
-                    else{
+                    else {
                         showAlertWithPositive(
                             "error",
-                            "step 2-2: error code ${String(selectFilePin,Charsets.UTF_8)}"
+                            "step 2-2: error code ${String(selectFilePin, Charsets.UTF_8)}"
                         )
                     }
                     isoDep.close()
@@ -240,8 +256,7 @@ class MainActivity : AppCompatActivity() {
                             "error",
                             "step 2-3: pin lock  ${String(verifyPin, Charsets.UTF_8)}"
                         )
-                    }
-                    else {
+                    } else {
                         showAlertWithPositive(
                             "error",
                             "step 2-3: pin lock  ${String(verifyPin, Charsets.UTF_8)}"
@@ -251,25 +266,46 @@ class MainActivity : AppCompatActivity() {
                     return@also
                 }
 
-                var digistInfo: ByteArray = byteArrayOf()
-                var digestValue = ""
-
-                val xmlString = XmlUtils.getXml(this, "test.xml")
-                xmlString?.toByteArray()?.let {
-                    val test = XmlUtils.canonicalizerXml(it)
-                    digistInfo = XmlUtils.createDigistInfo(test)
-                    val s = Base64.encodeToString(digistInfo, Base64.NO_WRAP)
-                    Utils.toHex(digistInfo)
-                    digestValue = XmlUtils.createDigistInfoBase64(test)
+                val selectComputerDigitalFile = isoDep.transceive(
+                    NfcUtils.commandSelectComputerDigitalFile
+                )
+                if (selectComputerDigitalFile != NFCStatus.SUCCESS.value) {
+                    if (selectComputerDigitalFile == NFCStatus.FILE_NOT_FOUND.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 2 -4 : file not found ${String(
+                                selectFilePin,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    else if (selectComputerDigitalFile == NFCStatus.NOT_ALLOW.value)
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-4: not allow command ${String(
+                                selectComputerDigitalFile,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    else {
+                        showAlertWithPositive(
+                            "error",
+                            "step 2-4: error code ${String(
+                                selectComputerDigitalFile,
+                                Charsets.UTF_8
+                            )}"
+                        )
+                    }
+                    isoDep.close()
+                    return@also
                 }
 
 
-                val command =
+                val computerSignature =
                     NfcUtils.commandSignatureData(
-                        digistInfo
+                        shaDigisInfo
                     )
 
-                val response = isoDep.transceive(command)
+                val response = isoDep.transceive(computerSignature)
 
                 tvContent.text = "Card Response: " + Utils.toHex(
                     response
@@ -322,6 +358,10 @@ class MainActivity : AppCompatActivity() {
                 showAlertWithPositive("error", "Please input Pin")
             } else {
                 dialog?.show()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    animation.reset()
+                }
+                animation.start()
                 startNFC()
             }
         }
@@ -339,6 +379,11 @@ class MainActivity : AppCompatActivity() {
             it.setContentView(modalBottomSheet)
             it.setCanceledOnTouchOutside(true)
             it.setCancelable(true)
+            val d: Drawable = modalBottomSheet.iconNFC.drawable
+            if (d is AnimatedVectorDrawable) {
+                animation = d
+                animation.start()
+            }
         }
 
     }

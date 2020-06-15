@@ -13,15 +13,26 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         android:textColor="@color/colorPrimary"
-        android:textSize="14pt" />
+        android:textSize="30sp" />
 
     <ImageView
+        android:id="@+id/iconNFC"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:layout_gravity="center"
-        android:src="@drawable/ic_nfc_black_24dp"
-       />
+        android:src="@drawable/animation_nfc" />
+
+    <TextView
+        android:id="@+id/tvContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="Tap a tag nfc to Scan"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:textColor="@color/gray"
+        android:textSize="16sp" />
 
 
 </LinearLayout>

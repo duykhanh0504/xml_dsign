@@ -56,6 +56,10 @@ class NfcUtils {
 
         var commandSignatureDataHeader = byteArrayOf(0x80.toByte(), 0x2A, 0x00, 0x80.toByte())
 
+        var commandSelectComputerDigitalFile = byteArrayOf(0x00, 0xA4.toByte(), 0x02, 0x0C, 0x02, 0x00, 0x17)
+
+        var sha1asn = byteArrayOf(0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a)
+
         fun commandSignatureData(data: ByteArray): ByteArray {
             var result: ArrayList<Byte> = ArrayList()
             result.addAll(commandSignatureDataHeader.asList())
@@ -67,6 +71,14 @@ class NfcUtils {
         fun commandSignaturePin(data: ByteArray): ByteArray {
             var result: ArrayList<Byte> = ArrayList()
             result.addAll(commandPINVerify.asList())
+            result.add(data.size.toByte())
+            result.addAll(data.asList())
+            return result.toByteArray()
+        }
+
+        fun asn1DigestInfo(data: ByteArray): ByteArray {
+            var result: ArrayList<Byte> = ArrayList()
+            result.addAll(commandSignatureDataHeader.asList())
             result.add(data.size.toByte())
             result.addAll(data.asList())
             return result.toByteArray()
