@@ -1,6 +1,7 @@
 package com.moneyforward.nfc_dsxml
 
 import android.nfc.tech.IsoDep
+import android.util.Log
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.security.cert.Certificate
@@ -37,7 +38,6 @@ class NfcUtils {
             0x01
         )
 
-
         val commandSelectCertificate = byteArrayOf(
             0x00, 0xA4.toByte(), 0x02, 0x0C, 0x02, 0x00, 0x0A
         )
@@ -51,8 +51,6 @@ class NfcUtils {
         var commandPINVerify =
             byteArrayOf(0x00, 0x20, 0x00, 0x80.toByte())
 
-        var commandKeyForSignature = byteArrayOf(0x00, 0xA4.toByte(), 0x02, 0x0C, 0x02, 0x00, 0x1A)
-
         var commandSignatureDataHeader = byteArrayOf(0x80.toByte(), 0x2A, 0x00, 0x80.toByte())
 
         var commandSelectComputerDigitalFile =
@@ -62,7 +60,11 @@ class NfcUtils {
         // 01    : TAG             = OID(OBJECT IDENTIFIER) = 0x06
         // 02    : Length of Value = 5byte = 0x05
         // 03-07 : Value           = 1,3,14,3,2,26 -> SHA1 = 0x2b 0e 03 02 1a
+        // case .SHA256: return "2.16.840.1.101.3.4.2.1" -> SHA256 = 0x06 0x09 0x60 0x86 0x48 0x01 0x65 0x03 0x04 0x02 0x01
         var objectIndentifySha1 = byteArrayOf(0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a)
+
+        var objectIndentifySha256 =
+            byteArrayOf(0x06, 0x09, 0x60, 0x86.toByte(), 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01)
 
         var tagSequenceData = byteArrayOf(0x05, 0x00)
 
@@ -83,6 +85,10 @@ class NfcUtils {
             return result.toByteArray()
         }
 
+        fun checkDigestAlgorithm(data: ByteArray): SHAAlgorithm {
+            return if (data.size == 20) SHAAlgorithm.SHA1 else SHAAlgorithm.SHA256
+        }
+
         fun asn1DigestInfo(data: ByteArray): ByteArray {
             val result: ArrayList<Byte> = ArrayList()
             val sequence: ArrayList<Byte> = ArrayList()
@@ -93,8 +99,13 @@ class NfcUtils {
             // 03-   : Value           = OBJECT IDENTIFIER+NULL
 
             sequence.add(0x30)
-            sequence.add(((objectIndentifySha1.size + tagSequenceData.size).toByte()))
-            sequence.addAll(objectIndentifySha1.asList())
+            if (checkDigestAlgorithm(data) == SHAAlgorithm.SHA1) {
+                sequence.add(((objectIndentifySha1.size + tagSequenceData.size).toByte()))
+                sequence.addAll(objectIndentifySha1.asList())
+            } else {
+                sequence.add(((objectIndentifySha256.size + tagSequenceData.size).toByte()))
+                sequence.addAll(objectIndentifySha256.asList())
+            }
             sequence.addAll(tagSequenceData.asList())
 
             // <OCTET STRING>

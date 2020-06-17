@@ -36,14 +36,6 @@
             android:hint="input Pin" />
 
 
-        <WebView
-            android:id="@+id/webView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_centerInParent="true"
-            android:textColor="@color/colorPrimary"
-            android:visibility="gone"/>
-
         <Button
             android:id="@+id/btnSendCommand"
             android:layout_width="wrap_content"
@@ -58,13 +50,104 @@
             android:text="Start Reader" />
 
         <TextView
-            android:id="@+id/tvContent"
+            android:id="@+id/cardInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:layout_below="@+id/btnSendCommand"
-            android:textColor="@color/colorPrimary"
+            android:text="card ID"
+            android:textColor="#000000"
             android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/cardInfo"
+            android:textColor="@color/colorPrimary"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/digstInfoTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/tvContent"
+            android:text="digist Info Base 64"
+            android:textColor="#000000"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvDigistInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/digstInfoTitle"
+            android:textColor="@color/colorPrimary"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/signatureValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/tvDigistInfo"
+            android:text="signature Value from Card"
+            android:textColor="#000000"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvsignatureValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/signatureValue"
+            android:textColor="@color/colorPrimary"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/certificate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/tvsignatureValue"
+            android:text="Certifivcate from Card"
+            android:textColor="#000000"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvCertificate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@+id/certificate"
+            android:textColor="@color/colorPrimary"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnShowXml"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/certificate"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:textAllCaps="false"
+            android:paddingEnd="12dp"
+            android:paddingStart="12dp"
+            android:layout_marginTop="16dp"
+            android:enabled="false"
+            android:background="@drawable/edit_background"
+            android:text="Show Sign XMl" />
+
 
     </RelativeLayout>
 </androidx.core.widget.NestedScrollView>

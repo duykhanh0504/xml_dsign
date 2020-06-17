@@ -311,23 +311,38 @@ class XmlUtils {
             signInfo: String,
             signValue: String,
             certificate: String,
-            tagIdURI: String
+            tagIdURI: String,
+            shaAlgorithm: SHAAlgorithm = SHAAlgorithm.SHA1
         ): Element {
             var signature = Element(SIGNATURE, "http://www.w3.org/2000/09/xmldsig#")
             try {
                 var dignedInfo = Element(SIGNED_INFO, "http://www.w3.org/2000/09/xmldsig#")
                 var canonicalMedthod =
                     Element(CANONICAL_MEDTHOD, "http://www.w3.org/2000/09/xmldsig#")
-                val attAlgorthm = Attribute(ALGORITHM, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315")
+                val attAlgorthm =
+                    Attribute(ALGORITHM, "http://www.w3.org/TR/2001/REC-xml-c14n-20010315")
                 canonicalMedthod.addAttribute(attAlgorthm)
                 val signatureMethod =
                     Element(SIGNATUREMEDTHOD, "http://www.w3.org/2000/09/xmldsig#")
-                signatureMethod.addAttribute(
-                    Attribute(
-                        ALGORITHM,
-                        "http://www.w3.org/2001/04/xmldsig-more#rsa-sha1"
-                    )
-                )
+                when (shaAlgorithm) {
+                    SHAAlgorithm.SHA1 -> {
+                        signatureMethod.addAttribute(
+                            Attribute(
+                                ALGORITHM,
+                                "http://www.w3.org/2001/04/xmldsig-more#rsa-sha1"
+                            )
+                        )
+                    }
+                    SHAAlgorithm.SHA256 -> {
+                        signatureMethod.addAttribute(
+                            Attribute(
+                                ALGORITHM,
+                                "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+                            )
+                        )
+                    }
+                    else -> Unit
+                }
                 dignedInfo.insertChild(canonicalMedthod, 0)
                 dignedInfo.insertChild(signatureMethod, 1)
 
@@ -347,12 +362,25 @@ class XmlUtils {
                 reference.insertChild(transfroms, 0)
 
                 var digestMedthod = Element(DIGEST_MEDTHOD, "http://www.w3.org/2000/09/xmldsig#")
-                digestMedthod.addAttribute(
-                    Attribute(
-                        ALGORITHM,
-                        "http://www.w3.org/2001/04/xmlenc#sha1"
-                    )
-                )
+                when (shaAlgorithm) {
+                    SHAAlgorithm.SHA1 -> {
+                        digestMedthod.addAttribute(
+                            Attribute(
+                                ALGORITHM,
+                                "http://www.w3.org/2001/04/xmlenc#sha1"
+                            )
+                        )
+                    }
+                    SHAAlgorithm.SHA256 -> {
+                        digestMedthod.addAttribute(
+                            Attribute(
+                                ALGORITHM,
+                                "http://www.w3.org/2001/04/xmlenc#sha256"
+                            )
+                        )
+                    }
+                    else -> Unit
+                }
 
                 reference.insertChild(digestMedthod, 1)
 
